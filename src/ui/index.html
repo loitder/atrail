@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>atrail</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Agent Session Trail</p>
+          <h1>atrail</h1>
+        </div>
+        <div class="topbar-actions">
+          <span id="statusPill" class="status-pill">Checking</span>
+          <button id="refreshButton" class="button primary" type="button">Refresh</button>
+        </div>
+      </header>
+
+      <main>
+        <section class="summary-band" aria-label="Metrics summary">
+          <article class="metric-card">
+            <span class="metric-label">Sessions</span>
+            <strong id="metricSessions">--</strong>
+            <span id="metricTurns" class="metric-note">-- turns</span>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">Total Tokens</span>
+            <strong id="metricTokens">--</strong>
+            <span id="metricCached" class="metric-note">-- cached</span>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">Tool Calls</span>
+            <strong id="metricTools">--</strong>
+            <span id="metricFailedTools" class="metric-note">-- failed</span>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">Avg Turn</span>
+            <strong id="metricAvgTurn">--</strong>
+            <span id="metricErrors" class="metric-note">-- errors</span>
+          </article>
+        </section>
+
+        <section class="workbench">
+          <section class="session-panel" aria-label="Sessions">
+            <div class="panel-header">
+              <div>
+                <h2>Sessions</h2>
+                <p id="sessionCount" class="panel-subtitle">-- loaded</p>
+              </div>
+              <div class="controls">
+                <label class="control">
+                  <span>Search</span>
+                  <input id="searchInput" type="search" placeholder="id, model, project" />
+                </label>
+                <label class="control compact">
+                  <span>Status</span>
+                  <select id="statusFilter">
+                    <option value="all">All</option>
+                    <option value="success">Success</option>
+                    <option value="failed">Failed</option>
+                    <option value="running">Running</option>
+                  </select>
+                </label>
+                <label class="toggle-control">
+                  <input id="errorsOnly" type="checkbox" />
+                  <span>Errors only</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Session</th>
+                    <th>Model</th>
+                    <th>Started</th>
+                    <th>Duration</th>
+                    <th>Tokens</th>
+                    <th>Tools</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="sessionRows">
+                  <tr>
+                    <td colspan="7" class="empty-cell">Loading sessions</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <aside class="detail-panel" aria-label="Session detail">
+            <div class="detail-header">
+              <div>
+                <p class="eyebrow">Selected Session</p>
+                <h2 id="detailTitle">None selected</h2>
+              </div>
+              <span id="detailStatus" class="status-chip neutral">Idle</span>
+            </div>
+
+            <dl class="detail-meta">
+              <div>
+                <dt>Project</dt>
+                <dd id="detailProject">--</dd>
+              </div>
+              <div>
+                <dt>Model</dt>
+                <dd id="detailModel">--</dd>
+              </div>
+              <div>
+                <dt>Started</dt>
+                <dd id="detailStarted">--</dd>
+              </div>
+              <div>
+                <dt>Duration</dt>
+                <dd id="detailDuration">--</dd>
+              </div>
+            </dl>
+
+            <section class="token-panel" aria-label="Token distribution">
+              <div class="section-heading">
+                <h3>Token Mix</h3>
+                <span id="tokenTotal">-- total</span>
+              </div>
+              <div id="tokenBars" class="token-bars"></div>
+            </section>
+
+            <section class="timeline-panel" aria-label="Timeline">
+              <div class="section-heading">
+                <h3>Timeline</h3>
+                <span id="timelineCount">-- events</span>
+              </div>
+              <div id="timelineList" class="timeline-list">
+                <p class="empty-state">Select a session</p>
+              </div>
+            </section>
+          </aside>
+        </section>
+      </main>
+    </div>
+
+    <script src="/assets/app.js"></script>
+  </body>
+</html>

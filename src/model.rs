@@ -201,7 +201,17 @@ pub struct SessionSummary {
     pub duration_ms: Option<i64>,
     pub status: String,
     pub model: Option<String>,
+    pub input_tokens: i64,
+    pub output_tokens: i64,
+    pub cached_tokens: i64,
+    pub reasoning_tokens: i64,
     pub total_tokens: i64,
+    pub estimated_cost_usd: Option<f64>,
+    pub input_cost_usd: Option<f64>,
+    pub cached_input_cost_usd: Option<f64>,
+    pub output_cost_usd: Option<f64>,
+    pub cost_model: Option<String>,
+    pub cost_source: Option<String>,
     pub tool_call_count: i64,
     pub error_count: i64,
 }
@@ -232,4 +242,13 @@ pub struct MetricsSummary {
     pub errors: i64,
     pub avg_session_duration_ms: Option<f64>,
     pub avg_turn_duration_ms: Option<f64>,
+}
+
+#[derive(Debug, Clone)]
+pub struct TokenUsageByModel {
+    pub model: Option<String>,
+    pub input_tokens: i64,
+    pub output_tokens: i64,
+    pub cached_tokens: i64,
+    pub reasoning_tokens: i64,
 }

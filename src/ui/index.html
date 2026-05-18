@@ -27,9 +27,9 @@
             <span id="metricTurns" class="metric-note">-- turns</span>
           </article>
           <article class="metric-card">
-            <span class="metric-label">Total Tokens</span>
+            <span class="metric-label">Tokens / API Est.</span>
             <strong id="metricTokens">--</strong>
-            <span id="metricCached" class="metric-note">-- cached</span>
+            <span id="metricCost" class="metric-note">-- estimated</span>
           </article>
           <article class="metric-card">
             <span class="metric-label">Tool Calls</span>
@@ -80,13 +80,14 @@
                     <th>Started</th>
                     <th>Duration</th>
                     <th>Tokens</th>
+                    <th>API Est.</th>
                     <th>Tools</th>
                     <th>Status</th>
                   </tr>
                 </thead>
                 <tbody id="sessionRows">
                   <tr>
-                    <td colspan="7" class="empty-cell">Loading sessions</td>
+                    <td colspan="8" class="empty-cell">Loading sessions</td>
                   </tr>
                 </tbody>
               </table>
@@ -118,6 +119,10 @@
               <div>
                 <dt>Duration</dt>
                 <dd id="detailDuration">--</dd>
+              </div>
+              <div>
+                <dt>API Est.</dt>
+                <dd id="detailCost">--</dd>
               </div>
             </dl>
 

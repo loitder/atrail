@@ -1,6 +1,7 @@
 pub mod api;
 pub mod codex;
 pub mod model;
+pub mod pricing;
 pub mod redact;
 pub mod storage;
 pub mod ui;

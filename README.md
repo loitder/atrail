@@ -121,6 +121,7 @@ GET /api/sessions
 GET /api/sessions/{id}
 GET /api/sessions/{id}/timeline
 GET /api/metrics/summary
+GET /api/pricing/openai
 GET /api/admin/status
 ```
 
@@ -198,7 +199,9 @@ cargo fmt
 
 ## Current Scope
 
-atrail is an early local-first implementation. It does not proxy Codex requests,
-does not upload data, and does not calculate actual billing. Cost estimates,
-OpenTelemetry ingestion, and support for additional coding agents are future
+atrail is an early local-first implementation. It does not proxy Codex requests
+and does not upload data. Cost display is an API-price estimate, not a Codex or
+ChatGPT subscription bill: the API tries to read OpenAI's public pricing page at
+runtime and falls back to a bundled price table when the page cannot be fetched.
+OpenTelemetry ingestion and support for additional coding agents are future
 extensions.

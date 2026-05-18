@@ -22,7 +22,7 @@ fn ingests_fixture_into_sqlite() {
 
     let sessions = store.sessions(10).unwrap();
     assert_eq!(sessions.len(), 1);
-    assert_eq!(sessions[0].total_tokens, 17);
+    assert_eq!(sessions[0].total_tokens, 14);
     assert_eq!(sessions[0].tool_call_count, 1);
 
     let timeline = store.timeline("ses_fixture").unwrap();

@@ -277,6 +277,10 @@ impl Store {
             "SELECT
                s.id, s.source, s.project_id, s.started_at, s.ended_at, s.duration_ms,
                s.status, s.model,
+               COALESCE(SUM(t.input_tokens), 0) AS input_tokens,
+               COALESCE(SUM(t.output_tokens), 0) AS output_tokens,
+               COALESCE(SUM(t.cached_tokens), 0) AS cached_tokens,
+               COALESCE(SUM(t.reasoning_tokens), 0) AS reasoning_tokens,
                COALESCE(SUM(t.total_tokens), 0) AS total_tokens,
                (SELECT COUNT(*) FROM tool_calls tc WHERE tc.session_id = s.id) AS tool_count,
                (SELECT COUNT(*) FROM events e WHERE e.session_id = s.id AND e.event_type = 'error')
@@ -297,9 +301,19 @@ impl Store {
                 duration_ms: row.get(5)?,
                 status: row.get(6)?,
                 model: row.get(7)?,
-                total_tokens: row.get(8)?,
-                tool_call_count: row.get(9)?,
-                error_count: row.get(10)?,
+                input_tokens: row.get(8)?,
+                output_tokens: row.get(9)?,
+                cached_tokens: row.get(10)?,
+                reasoning_tokens: row.get(11)?,
+                total_tokens: row.get(12)?,
+                estimated_cost_usd: None,
+                input_cost_usd: None,
+                cached_input_cost_usd: None,
+                output_cost_usd: None,
+                cost_model: None,
+                cost_source: None,
+                tool_call_count: row.get(13)?,
+                error_count: row.get(14)?,
             })
         })?;
         rows.collect::<rusqlite::Result<_>>().map_err(Into::into)
@@ -369,6 +383,29 @@ impl Store {
         })
         .optional()?
         .context("summary query returned no row")
+    }
+
+    pub fn token_usage_by_model(&self) -> Result<Vec<TokenUsageByModel>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT COALESCE(t.model, s.model) AS model,
+                    COALESCE(SUM(t.input_tokens), 0),
+                    COALESCE(SUM(t.output_tokens), 0),
+                    COALESCE(SUM(t.cached_tokens), 0),
+                    COALESCE(SUM(t.reasoning_tokens), 0)
+             FROM token_usage t
+             LEFT JOIN sessions s ON s.id = t.session_id
+             GROUP BY COALESCE(t.model, s.model)",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(TokenUsageByModel {
+                model: row.get(0)?,
+                input_tokens: row.get(1)?,
+                output_tokens: row.get(2)?,
+                cached_tokens: row.get(3)?,
+                reasoning_tokens: row.get(4)?,
+            })
+        })?;
+        rows.collect::<rusqlite::Result<_>>().map_err(Into::into)
     }
 }
 

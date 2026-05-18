@@ -288,7 +288,7 @@ dt {
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 780px;
+  min-width: 900px;
 }
 
 th,
@@ -333,9 +333,23 @@ tbody tr.selected {
 }
 
 .session-id span,
-.muted-cell {
+.muted-cell,
+.token-cell span,
+.token-row-value small {
   color: var(--muted);
   font-size: 12px;
+}
+
+.token-cell {
+  display: grid;
+  gap: 3px;
+}
+
+.token-cell strong,
+.cost-value {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
 }
 
 .empty-cell,
@@ -408,11 +422,22 @@ dd {
 
 .token-row {
   display: grid;
-  grid-template-columns: 86px minmax(0, 1fr) 74px;
+  grid-template-columns: 78px minmax(0, 1fr) 88px;
   align-items: center;
   gap: 10px;
   font-size: 12px;
   font-weight: 800;
+}
+
+.token-row-value {
+  display: grid;
+  justify-items: end;
+  line-height: 1.2;
+}
+
+.token-row-value strong {
+  color: var(--ink);
+  font-size: 12px;
 }
 
 .token-track {
@@ -602,6 +627,6 @@ pre {
   }
 
   .token-row {
-    grid-template-columns: 76px minmax(0, 1fr) 64px;
+    grid-template-columns: 70px minmax(0, 1fr) 78px;
   }
 }

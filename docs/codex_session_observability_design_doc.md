@@ -1026,13 +1026,14 @@ approval_wait_duration = approval_resolved_time - approval_requested_time
 ### 9.8 Token Total
 
 ```text
-total_tokens = input_tokens + output_tokens + cached_tokens + reasoning_tokens
+total_tokens = input_tokens + output_tokens
 ```
 
 也可以额外提供 billable_tokens：
 
 ```text
-billable_tokens = input_tokens + output_tokens + reasoning_tokens + cached_tokens * cache_discount_ratio
+uncached_input_tokens = max(input_tokens - cached_tokens, 0)
+billable_tokens = uncached_input_tokens + cached_tokens * cache_discount_ratio + output_tokens
 ```
 
 注意：第一阶段成本估算只作为参考，不作为账单依据。
@@ -1151,10 +1152,11 @@ models:
 ### 11.2 成本计算
 
 ```text
-cost = input_tokens / 1_000_000 * input_price
+uncached_input_tokens = max(input_tokens - cached_tokens, 0)
+
+cost = uncached_input_tokens / 1_000_000 * input_price
      + cached_tokens / 1_000_000 * cached_input_price
      + output_tokens / 1_000_000 * output_price
-     + reasoning_tokens / 1_000_000 * reasoning_price
 ```
 
 ### 11.3 成本可信度
@@ -2067,4 +2069,3 @@ JSONL Importer → SQLite → API → Timeline UI → Token/Latency Dashboard �
 ```
 
 这个路径风险最低，也最容易快速做出可用产品。
-

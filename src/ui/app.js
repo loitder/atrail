@@ -14,7 +14,7 @@ const elements = {
   metricSessions: document.querySelector("#metricSessions"),
   metricTurns: document.querySelector("#metricTurns"),
   metricTokens: document.querySelector("#metricTokens"),
-  metricCached: document.querySelector("#metricCached"),
+  metricCost: document.querySelector("#metricCost"),
   metricTools: document.querySelector("#metricTools"),
   metricFailedTools: document.querySelector("#metricFailedTools"),
   metricAvgTurn: document.querySelector("#metricAvgTurn"),
@@ -30,6 +30,7 @@ const elements = {
   detailModel: document.querySelector("#detailModel"),
   detailStarted: document.querySelector("#detailStarted"),
   detailDuration: document.querySelector("#detailDuration"),
+  detailCost: document.querySelector("#detailCost"),
   tokenTotal: document.querySelector("#tokenTotal"),
   tokenBars: document.querySelector("#tokenBars"),
   timelineCount: document.querySelector("#timelineCount"),
@@ -37,6 +38,16 @@ const elements = {
 };
 
 const numberFormat = new Intl.NumberFormat();
+const compactNumberFormat = new Intl.NumberFormat(undefined, {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+const currencyFormat = new Intl.NumberFormat(undefined, {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 const dateFormat = new Intl.DateTimeFormat(undefined, {
   month: "short",
   day: "2-digit",
@@ -90,27 +101,38 @@ function renderSummary() {
   const summary = state.summary || {};
   elements.metricSessions.textContent = formatNumber(summary.sessions);
   elements.metricTurns.textContent = `${formatNumber(summary.turns)} turns`;
-  elements.metricTokens.textContent = formatNumber(summary.total_tokens);
-  elements.metricCached.textContent = `${formatNumber(summary.cached_tokens)} cached`;
+  elements.metricTokens.textContent = formatTokenCount(summary.total_tokens);
+  elements.metricTokens.title = `${formatNumber(summary.total_tokens)} tokens`;
+  elements.metricCost.textContent = `${formatUsd(summary.estimated_cost_usd)} API est.`;
   elements.metricTools.textContent = formatNumber(summary.tool_calls);
   elements.metricFailedTools.textContent = `${formatNumber(summary.failed_tool_calls)} failed`;
   elements.metricAvgTurn.textContent = formatDuration(summary.avg_turn_duration_ms);
   elements.metricErrors.textContent = `${formatNumber(summary.errors)} errors`;
-  renderTokenBars(summary);
 }
 
-function renderTokenBars(summary) {
-  const total = Number(summary.total_tokens || 0);
+function renderTokenBars(source) {
+  if (!source) {
+    elements.tokenTotal.textContent = "-- total";
+    elements.tokenBars.innerHTML = "";
+    return;
+  }
+
+  const total = Number(source.total_tokens || 0);
+  const cached = Number(source.cached_tokens || 0);
+  const input = Number(source.input_tokens || 0);
+  const output = Number(source.output_tokens || 0);
+  const reasoning = Number(source.reasoning_tokens || 0);
+  const uncachedInput = Math.max(0, input - cached);
   const rows = [
-    ["Input", summary.input_tokens, "input"],
-    ["Output", summary.output_tokens, "output"],
-    ["Cached", summary.cached_tokens, "cached"],
-    ["Reasoning", summary.reasoning_tokens, "reasoning"],
+    ["Input", uncachedInput, source.input_cost_usd, "input"],
+    ["Cached", cached, source.cached_input_cost_usd, "cached"],
+    ["Output", output, source.output_cost_usd, "output"],
   ];
 
-  elements.tokenTotal.textContent = `${formatNumber(total)} total`;
+  const reasoningNote = reasoning > 0 ? ` / ${formatTokenCount(reasoning)} reasoning included` : "";
+  elements.tokenTotal.textContent = `${formatNumber(total)} tokens / ${formatUsd(source.estimated_cost_usd)}${reasoningNote}`;
   elements.tokenBars.innerHTML = rows
-    .map(([label, value, type]) => {
+    .map(([label, value, cost, type]) => {
       const safeValue = Number(value || 0);
       const width = total > 0 ? Math.max(2, Math.round((safeValue / total) * 100)) : 0;
       return `
@@ -119,7 +141,10 @@ function renderTokenBars(summary) {
           <div class="token-track">
             <div class="token-fill ${type}" style="width: ${width}%"></div>
           </div>
-          <span>${formatNumber(safeValue)}</span>
+          <span class="token-row-value">
+            <strong>${formatTokenCount(safeValue)}</strong>
+            <small>${escapeHtml(cost === null ? "in output" : formatUsd(cost))}</small>
+          </span>
         </div>
       `;
     })
@@ -131,7 +156,7 @@ function renderSessions() {
   elements.sessionCount.textContent = `${formatNumber(filtered.length)} of ${formatNumber(state.sessions.length)} loaded`;
 
   if (!filtered.length) {
-    elements.sessionRows.innerHTML = `<tr><td colspan="7" class="empty-cell">No sessions match the current filters</td></tr>`;
+    elements.sessionRows.innerHTML = `<tr><td colspan="8" class="empty-cell">No sessions match the current filters</td></tr>`;
     return;
   }
 
@@ -147,7 +172,13 @@ function renderSessions() {
         <td data-label="Model">${escapeHtml(session.model || "unknown")}</td>
         <td data-label="Started">${formatDate(session.started_at)}</td>
         <td data-label="Duration">${formatDuration(session.duration_ms)}</td>
-        <td data-label="Tokens">${formatNumber(session.total_tokens)}</td>
+        <td data-label="Tokens">
+          <div class="token-cell" title="${escapeAttr(formatNumber(session.total_tokens))} tokens">
+            <strong>${formatTokenCount(session.total_tokens)}</strong>
+            <span>${escapeHtml(tokenBreakdown(session))}</span>
+          </div>
+        </td>
+        <td data-label="API Est."><strong class="cost-value">${escapeHtml(formatUsd(session.estimated_cost_usd))}</strong></td>
         <td data-label="Tools">${formatNumber(session.tool_call_count)}</td>
         <td data-label="Status"><span class="status-chip ${statusTone(session.status)}">${escapeHtml(session.status || "unknown")}</span></td>
       </tr>
@@ -200,6 +231,8 @@ function renderDetail(session, loadingTimeline = false) {
   elements.detailModel.textContent = session.model || "unknown";
   elements.detailStarted.textContent = formatDate(session.started_at);
   elements.detailDuration.textContent = formatDuration(session.duration_ms);
+  elements.detailCost.textContent = formatUsd(session.estimated_cost_usd);
+  renderTokenBars(session);
   elements.timelineCount.textContent = loadingTimeline ? "Loading" : `${formatNumber(state.timeline.length)} events`;
   if (loadingTimeline) {
     elements.timelineList.innerHTML = `<p class="empty-state">Loading timeline</p>`;
@@ -214,6 +247,8 @@ function renderEmptyDetail() {
   elements.detailModel.textContent = "--";
   elements.detailStarted.textContent = "--";
   elements.detailDuration.textContent = "--";
+  elements.detailCost.textContent = "--";
+  renderTokenBars(null);
   elements.timelineCount.textContent = "-- events";
   elements.timelineList.innerHTML = `<p class="empty-state">No session selected</p>`;
 }
@@ -256,12 +291,47 @@ function renderTimeline() {
 }
 
 function renderError(message) {
-  elements.sessionRows.innerHTML = `<tr><td colspan="7" class="empty-cell">${escapeHtml(message)}</td></tr>`;
+  elements.sessionRows.innerHTML = `<tr><td colspan="8" class="empty-cell">${escapeHtml(message)}</td></tr>`;
   elements.timelineList.innerHTML = `<p class="empty-state">${escapeHtml(message)}</p>`;
 }
 
 function formatNumber(value) {
   return numberFormat.format(Number(value || 0));
+}
+
+function formatTokenCount(value) {
+  const number = Number(value || 0);
+  if (Math.abs(number) < 10000) {
+    return numberFormat.format(number);
+  }
+  return compactNumberFormat.format(number);
+}
+
+function formatUsd(value) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) {
+    return "--";
+  }
+  const amount = Number(value);
+  if (Math.abs(amount) > 0 && Math.abs(amount) < 0.01) {
+    return `$${amount.toFixed(6).replace(/0+$/, "").replace(/\.$/, "")}`;
+  }
+  return currencyFormat.format(amount);
+}
+
+function tokenBreakdown(session) {
+  const input = formatTokenCount(session.input_tokens);
+  const cached = Number(session.cached_tokens || 0);
+  const output = Number(session.output_tokens || 0);
+  const reasoning = Number(session.reasoning_tokens || 0);
+  const parts = [`in ${input}`];
+  if (cached > 0) {
+    parts.push(`cached ${formatTokenCount(cached)}`);
+  }
+  parts.push(`out ${formatTokenCount(output)}`);
+  if (reasoning > 0) {
+    parts.push(`reasoning ${formatTokenCount(reasoning)}`);
+  }
+  return parts.join(" / ");
 }
 
 function formatDate(value) {
